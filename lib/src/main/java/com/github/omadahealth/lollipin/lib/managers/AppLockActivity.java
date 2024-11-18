@@ -2,10 +2,10 @@ package com.github.omadahealth.lollipin.lib.managers;
 
 import android.content.Context;
 import android.content.Intent;
-import android.hardware.fingerprint.FingerprintManager;
+// import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
@@ -13,7 +13,11 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.biometric.BiometricManager;
+import androidx.core.content.ContextCompat;
+
 import com.github.omadahealth.lollipin.lib.PinActivity;
+import com.github.omadahealth.lollipin.lib.PinFragmentActivity;
 import com.github.omadahealth.lollipin.lib.R;
 import com.github.omadahealth.lollipin.lib.enums.KeyboardButtonEnum;
 import com.github.omadahealth.lollipin.lib.interfaces.KeyboardButtonClickedListener;
@@ -29,7 +33,7 @@ import java.util.List;
  * Call this activity in normal or singleTop mode (not singleTask or singleInstance, it does not work
  * with {@link android.app.Activity#startActivityForResult(android.content.Intent, int)}).
  */
-public abstract class AppLockActivity extends PinActivity implements KeyboardButtonClickedListener, View.OnClickListener, FingerprintUiHelper.Callback {
+public abstract class AppLockActivity extends PinFragmentActivity implements KeyboardButtonClickedListener, View.OnClickListener, FingerprintUiHelper.Callback {
 
     public static final String TAG = AppLockActivity.class.getSimpleName();
     public static final String ACTION_CANCEL = TAG + ".actionCancelled";
@@ -45,7 +49,7 @@ public abstract class AppLockActivity extends PinActivity implements KeyboardBut
     protected LockManager mLockManager;
 
 
-    protected FingerprintManager mFingerprintManager;
+    // protected FingerprintManager mFingerprintManager;
     protected FingerprintUiHelper mFingerprintUiHelper;
 
     protected int mType = AppLock.UNLOCK_PIN;
@@ -140,12 +144,21 @@ public abstract class AppLockActivity extends PinActivity implements KeyboardBut
     private void initLayoutForFingerprint() {
         mFingerprintImageView = (ImageView) this.findViewById(R.id.pin_code_fingerprint_imageview);
         mFingerprintTextView = (TextView) this.findViewById(R.id.pin_code_fingerprint_textview);
-        if (mType == AppLock.UNLOCK_PIN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            mFingerprintManager = (FingerprintManager) getSystemService(Context.FINGERPRINT_SERVICE);
-            mFingerprintUiHelper = new FingerprintUiHelper.FingerprintUiHelperBuilder(mFingerprintManager).build(mFingerprintImageView, mFingerprintTextView, this);
+        if ((mType == AppLock.UNLOCK_PIN /*|| mType == AppLock.ENABLE_PINLOCK*/) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+
+            //mFingerprintManager = (FingerprintManager) getSystemService(Context.FINGERPRINT_SERVICE);
+            mFingerprintUiHelper = new FingerprintUiHelper.FingerprintUiHelperBuilder()
+                    .setContext(this)
+                    .build(mFingerprintImageView, mFingerprintTextView, this);
             try {
-            if (mFingerprintManager.isHardwareDetected() && mFingerprintUiHelper.isFingerprintAuthAvailable()
-                    && mLockManager.getAppLock().isFingerprintAuthEnabled()) {
+                //boolean isHardwareDetected = mFingerprintManager.isHardwareDetected();
+                //boolean isFingerprintAuthAvailable = mFingerprintUiHelper.isFingerprintAuthAvailable();
+                boolean lockFingerAuthEnabled = mLockManager.getAppLock().isFingerprintAuthEnabled();
+                //Log.d("Ala", "hardware " + isHardwareDetected + " avail " + isFingerprintAuthAvailable + " enabled " + lockFingerAuthEnabled);
+
+            if (BiometricManager.from(this)
+                    .canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS && lockFingerAuthEnabled) {
                     mFingerprintImageView.setVisibility(View.VISIBLE);
                     mFingerprintTextView.setVisibility(View.VISIBLE);
                     mFingerprintUiHelper.startListening();

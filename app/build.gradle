@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion '26.0.2'
+    compileSdkVersion 34
+    // buildToolsVersion '26.0.2'
 
     defaultConfig {
         applicationId "com.github.orangegangsters.lollipin"
-        minSdkVersion 14
-        targetSdkVersion 24
+        minSdkVersion 21
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
     }
@@ -17,16 +17,22 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
     compile project(':lib')
-    compile 'com.android.support:appcompat-v7:26.0.2'
+    // compile 'com.android.support:appcompat-v7:26.0.2'
 
     //Lollipop dialogs https://github.com/lewisjdeane/L-Dialogs and buttons, animations etc...
     compile 'uk.me.lewisdeane.ldialogs:ldialogs:1.2.0@aar'
+
+    implementation "androidx.biometric:biometric:1.1.0"
+
+    implementation "androidx.appcompat:appcompat:1.7.0"
 
     //test
     androidTestCompile 'com.jayway.android.robotium:robotium-solo:5.5.2'
@@ -41,3 +47,6 @@ repositories {
     }
 }
 
+configurations.implementation {
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+}

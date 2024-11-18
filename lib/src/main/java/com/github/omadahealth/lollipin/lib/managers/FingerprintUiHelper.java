@@ -19,13 +19,20 @@ package com.github.omadahealth.lollipin.lib.managers;
 import android.annotation.TargetApi;
 import android.app.KeyguardManager;
 import android.content.Context;
-import android.hardware.fingerprint.FingerprintManager;
+// import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
 import android.os.CancellationSignal;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.biometric.BiometricManager;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentActivity;
 
 import com.github.omadahealth.lollipin.lib.R;
 
@@ -38,6 +45,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.time.LocalDate;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -50,7 +58,7 @@ import javax.crypto.SecretKey;
  * - text/icon around fingerprint authentication UI.
  */
 @TargetApi(Build.VERSION_CODES.M)
-public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallback {
+public class FingerprintUiHelper extends BiometricPrompt.AuthenticationCallback {
 
     /**
      * The timeout for the error to be displayed. Returns to the normal UI after this.
@@ -80,7 +88,7 @@ public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallba
     /**
      * The {@link android.hardware.fingerprint.FingerprintManager.CryptoObject}
      */
-    private final FingerprintManager mFingerprintManager;
+    //private final FingerprintManager mFingerprintManager;
     /**
      * The {@link ImageView} that is used to show the authent state
      */
@@ -102,19 +110,31 @@ public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallba
      */
     private boolean mSelfCancelled;
 
+    private final Context context;
+
+    private final BiometricPrompt biometricPrompt;
+
+    private final BiometricPrompt.PromptInfo promptInfo;
+
     /**
      * Builder class for {@link FingerprintUiHelper} in which injected fields from Dagger
      * holds its fields and takes other arguments in the {@link #build} method.
      */
     public static class FingerprintUiHelperBuilder {
-        private final FingerprintManager mFingerPrintManager;
+        //private final FingerprintManager mFingerPrintManager;
+        private FragmentActivity context;
 
-        public FingerprintUiHelperBuilder(FingerprintManager fingerprintManager) {
-            mFingerPrintManager = fingerprintManager;
+        public FingerprintUiHelperBuilder() {
+            // mFingerPrintManager = fingerprintManager;
+        }
+
+        public FingerprintUiHelperBuilder setContext(FragmentActivity context) {
+            this.context = context;
+            return this;
         }
 
         public FingerprintUiHelper build(ImageView icon, TextView errorTextView, Callback callback) {
-            return new FingerprintUiHelper(mFingerPrintManager, icon, errorTextView,
+            return new FingerprintUiHelper(context, icon, errorTextView,
                     callback);
         }
     }
@@ -123,12 +143,29 @@ public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallba
      * Constructor for {@link FingerprintUiHelper}. This method is expected to be called from
      * only the {@link FingerprintUiHelperBuilder} class.
      */
-    private FingerprintUiHelper(FingerprintManager fingerprintManager,
+    private FingerprintUiHelper(
+            FragmentActivity context,
+            // FingerprintManager fingerprintManager,
                                 ImageView icon, TextView errorTextView, Callback callback) {
-        mFingerprintManager = fingerprintManager;
+        // mFingerprintManager = fingerprintManager;
         mIcon = icon;
         mErrorTextView = errorTextView;
         mCallback = callback;
+        this.context = context;
+        this.biometricPrompt = new BiometricPrompt(
+                context,
+                ContextCompat.getMainExecutor(context),
+                this
+        );
+        this.promptInfo = new BiometricPrompt.PromptInfo.Builder()
+                .setTitle("Some title")
+                .setSubtitle("Some subtitle")
+                .setDescription("Some description")
+                // Authenticate without requiring the user to press a "confirm"
+                // button after satisfying the biometric check
+                .setConfirmationRequired(false)
+                .setNegativeButtonText("Negative button")
+                .build();
     }
 
     /**
@@ -138,14 +175,18 @@ public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallba
      */
     public void startListening() throws SecurityException {
         if (initCipher()) {
-            FingerprintManager.CryptoObject cryptoObject = new FingerprintManager.CryptoObject(mCipher);
+            BiometricPrompt.CryptoObject cryptoObject = new BiometricPrompt.CryptoObject(mCipher);
             if (!isFingerprintAuthAvailable()) {
+                Log.d("fui", "fingerprintAuthAvailable() returned false");
                 return;
             }
             mCancellationSignal = new CancellationSignal();
             mSelfCancelled = false;
-            mFingerprintManager.authenticate(cryptoObject, mCancellationSignal, 0 /* flags */, this, null);
+            biometricPrompt.authenticate(promptInfo, cryptoObject);
             mIcon.setImageResource(R.drawable.ic_fp_40px);
+            Log.d("fui", "successfully started listening for something. ");
+        } else {
+            Log.d("fui", "initCipher() returned false");
         }
     }
 
@@ -165,6 +206,7 @@ public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallba
      */
     @Override
     public void onAuthenticationError(int errMsgId, CharSequence errString) {
+        Log.d("fui", "onAuthenticationError");
         if (!mSelfCancelled) {
             showError(errString);
             mIcon.postDelayed(new Runnable() {
@@ -179,16 +221,18 @@ public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallba
     /**
      * Called by {@link FingerprintManager} if the user asked for help.
      */
-    @Override
+    /*@Override
     public void onAuthenticationHelp(int helpMsgId, CharSequence helpString) {
+        Log.d("fui", "onAuthenticationHelp");
         showError(helpString);
-    }
+    }*/
 
     /**
      * Called by {@link FingerprintManager} if the authentication failed (bad finger etc...).
      */
     @Override
     public void onAuthenticationFailed() {
+        Log.d("fui", "onAuthenticationFailed");
         showError(mIcon.getResources().getString(
                 R.string.pin_code_fingerprint_not_recognized));
     }
@@ -197,7 +241,8 @@ public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallba
      * Called by {@link FingerprintManager} if the authentication succeeded.
      */
     @Override
-    public void onAuthenticationSucceeded(FingerprintManager.AuthenticationResult result) {
+    public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+        Log.d("fui", "onAuthenticationSucceeded");
         mErrorTextView.removeCallbacks(mResetErrorTextRunnable);
         mIcon.setImageResource(R.drawable.ic_fingerprint_success);
         mErrorTextView.setTextColor(
@@ -220,9 +265,8 @@ public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallba
      * @throws SecurityException If the hardware is not available, or the permission are not set
      */
     public boolean isFingerprintAuthAvailable() throws SecurityException {
-        return mFingerprintManager.isHardwareDetected()
-                && mFingerprintManager.hasEnrolledFingerprints()
-                && ((KeyguardManager) mIcon.getContext().getSystemService(Context.KEYGUARD_SERVICE)).isDeviceSecure();
+        return BiometricManager.from(context)
+                .canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS;
     }
 
     /**
@@ -235,6 +279,7 @@ public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallba
      */
     private boolean initCipher() {
         try {
+            Log.d("fui", "inside initCipher()");
             if (mKeyStore == null) {
                 mKeyStore = KeyStore.getInstance("AndroidKeyStore");
             }
@@ -243,9 +288,12 @@ public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallba
             SecretKey key = (SecretKey) mKeyStore.getKey(KEY_NAME, null);
             mCipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
             mCipher.init(Cipher.ENCRYPT_MODE, key);
+            Log.d("fui", "about to return true");
             return true;
         } catch (NoSuchPaddingException | KeyStoreException | CertificateException | UnrecoverableKeyException | IOException
                 | NoSuchAlgorithmException | InvalidKeyException e) {
+            Log.d("fui", "caught " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
