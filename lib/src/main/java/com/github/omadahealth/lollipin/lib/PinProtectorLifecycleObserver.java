@@ -1,73 +1,64 @@
 package com.github.omadahealth.lollipin.lib;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
-import androidx.fragment.app.FragmentActivity;
 
 import com.github.omadahealth.lollipin.lib.interfaces.LifeCycleInterface;
 import com.github.omadahealth.lollipin.lib.managers.AppLockActivity;
 
-/**
- * Created by stoyan and olivier on 1/12/15.
- * You must extend this Activity in order to support this library.
- * Then to enable PinCode blocking, you must call
- * {@link com.github.omadahealth.lollipin.lib.managers.LockManager#enableAppLock(android.content.Context, Class)}
- */
-public class PinFragmentActivity extends FragmentActivity {
+public class PinProtectorLifecycleObserver implements DefaultLifecycleObserver {
+
+    private final Activity activity;
     private static LifeCycleInterface mLifeCycleListener;
     private final BroadcastReceiver mPinCancelledReceiver;
 
-    public PinFragmentActivity() {
-        super();
+    public PinProtectorLifecycleObserver(Activity activity) {
+        this.activity = activity;
         mPinCancelledReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                finish();
+                activity.finish();
             }
         };
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onCreate(@NonNull LifecycleOwner owner) {
         IntentFilter filter = new IntentFilter(AppLockActivity.ACTION_CANCEL);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mPinCancelledReceiver, filter);
+        LocalBroadcastManager.getInstance(activity).registerReceiver(mPinCancelledReceiver, filter);
     }
 
     @Override
-    protected void onResume() {
+    public void onResume(@NonNull LifecycleOwner owner) {
         if (mLifeCycleListener != null) {
-            mLifeCycleListener.onActivityResumed(PinFragmentActivity.this);
+            mLifeCycleListener.onActivityResumed(activity);
         }
-        super.onResume();
     }
 
-    @Override
     public void onUserInteraction() {
         if (mLifeCycleListener != null){
-            mLifeCycleListener.onActivityUserInteraction(PinFragmentActivity.this);
+            mLifeCycleListener.onActivityUserInteraction(activity);
         }
-        super.onUserInteraction();
     }
 
     @Override
-    protected void onPause() {
+    public void onPause(@NonNull LifecycleOwner owner) {
         if (mLifeCycleListener != null) {
-            mLifeCycleListener.onActivityPaused(PinFragmentActivity.this);
+            mLifeCycleListener.onActivityPaused(activity);
         }
-        super.onPause();
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mPinCancelledReceiver);
+    public void onDestroy(@NonNull LifecycleOwner owner) {
+        LocalBroadcastManager.getInstance(activity).unregisterReceiver(mPinCancelledReceiver);
     }
 
     public static void setListener(LifeCycleInterface listener) {
@@ -84,4 +75,5 @@ public class PinFragmentActivity extends FragmentActivity {
     public static boolean hasListeners() {
         return (mLifeCycleListener != null);
     }
+
 }

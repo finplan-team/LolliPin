@@ -9,9 +9,10 @@ import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
 
-import com.github.omadahealth.lollipin.lib.PinActivity;
-import com.github.omadahealth.lollipin.lib.PinCompatActivity;
-import com.github.omadahealth.lollipin.lib.PinFragmentActivity;
+///import com.github.omadahealth.lollipin.lib.PinActivity;
+//import com.github.omadahealth.lollipin.lib.PinCompatActivity;
+//import com.github.omadahealth.lollipin.lib.PinFragmentActivity;
+import com.github.omadahealth.lollipin.lib.PinProtectorLifecycleObserver;
 import com.github.omadahealth.lollipin.lib.encryption.Encryptor;
 import com.github.omadahealth.lollipin.lib.enums.Algorithm;
 import com.github.omadahealth.lollipin.lib.interfaces.LifeCycleInterface;
@@ -210,23 +211,26 @@ public class AppLockImpl<T extends AppLockActivity> extends AppLock implements L
 
     @Override
     public void enable() {
-        PinActivity.setListener(this);
-        PinCompatActivity.setListener(this);
-        PinFragmentActivity.setListener(this);
+        //PinActivity.setListener(this);
+        //PinCompatActivity.setListener(this);
+        //PinFragmentActivity.setListener(this);
+        PinProtectorLifecycleObserver.setListener(this);
     }
 
     @Override
     public void disable() {
-        PinActivity.clearListeners();
-        PinCompatActivity.clearListeners();
-        PinFragmentActivity.clearListeners();
+        //PinActivity.clearListeners();
+        //PinCompatActivity.clearListeners();
+        //PinFragmentActivity.clearListeners();
+        PinProtectorLifecycleObserver.clearListeners();
     }
 
     @Override
     public void disableAndRemoveConfiguration() {
-        PinActivity.clearListeners();
-        PinCompatActivity.clearListeners();
-        PinFragmentActivity.clearListeners();
+        //PinActivity.clearListeners();
+        //PinCompatActivity.clearListeners();
+        //PinFragmentActivity.clearListeners();
+        PinProtectorLifecycleObserver.clearListeners();
         mSharedPreferences.edit().remove(PASSWORD_PREFERENCE_KEY)
                 .remove(LAST_ACTIVE_MILLIS_PREFERENCE_KEY)
                 .remove(PASSWORD_ALGORITHM_PREFERENCE_KEY)
