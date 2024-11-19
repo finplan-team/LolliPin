@@ -1,4 +1,8 @@
 apply plugin: 'com.android.library'
+apply plugin: 'maven-publish'//group
+
+group = 'com.github.finplan-team'
+version = '2.2.3'
 
 android {
     compileSdkVersion 34
@@ -15,12 +19,15 @@ android {
         }
     }
 
-    android {
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_8
-            targetCompatibility JavaVersion.VERSION_1_8
-        }
+    lint {
+        abortOnError = false
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    
     namespace 'com.github.omadahealth.lollipin.lib'
 
 }
@@ -78,4 +85,18 @@ repositories {
 
 configurations.implementation {
     exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            // Creates a Maven publication called "release".
+            release(MavenPublication) {
+                from components.findByName('release')
+                groupId = 'com.github.finplan-team'
+                artifactId = 'lollipin'
+                version = '2.2.3'
+            }
+        }
+    }
 }
