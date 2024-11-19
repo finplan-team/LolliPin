@@ -158,13 +158,13 @@ public class FingerprintUiHelper extends BiometricPrompt.AuthenticationCallback 
                 this
         );
         this.promptInfo = new BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Some title")
-                .setSubtitle("Some subtitle")
-                .setDescription("Some description")
+                .setTitle(context.getString(R.string.fingerprint_dialog_title))
+                .setSubtitle(context.getString(R.string.fingerprint_dialog_subtitle))
+                .setDescription(context.getString(R.string.fingerprint_dialog_description))
                 // Authenticate without requiring the user to press a "confirm"
                 // button after satisfying the biometric check
                 .setConfirmationRequired(false)
-                .setNegativeButtonText("Negative button")
+                .setNegativeButtonText(context.getString(R.string.fingerprint_dialog_negative_btn_text))
                 .build();
     }
 

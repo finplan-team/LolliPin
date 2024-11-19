@@ -31,4 +31,9 @@
     <string name="pin_code_fingerprint_success">Fingerprint recognized</string>
     <string name="pin_code_fingerprint_not_recognized">Fingerprint not recognized. Try again</string>
 
+    <string name="fingerprint_dialog_title">fingerprint_dialog_title</string>
+    <string name="fingerprint_dialog_subtitle">fingerprint_dialog_subtitle</string>
+    <string name="fingerprint_dialog_description">fingerprint_dialog_description</string>
+    <string name="fingerprint_dialog_negative_btn_text">fingerprint_negative_btn_text</string>
+
 </resources>
